@@ -16,14 +16,14 @@ This project provides user interface that gives above functionality to the end u
 
 This is completely open source. Feel free to download and use in commercial application. If you give credit to this project url that would be nice otherwise also its fine.
 
+Original Credit: Sheo Narayan http://www.dotnetfunda.com
 
-Thanks
 
-Sheo Narayan
+Update 09-05-2015
+----
+- Made RoleController async
+- Updated to BootStrap 3.3.5
+- Updated JQuery 2.1.4
+- Added Font Awesome 4.2.0
+ 
 
-The Foudner -
-http://www.dotnetfunda.com
-http://www.itfunda.com
-http://www.kidsfunda.com
-http://www.fundooVideo.com
-http://www.farmingfunda.com
