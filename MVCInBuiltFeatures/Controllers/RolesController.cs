@@ -6,6 +6,8 @@ using System.Web.Mvc;
 using MVCInBuiltFeatures.Models;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
+using System.Threading.Tasks;
+using System.Data.Entity;
 
 namespace MVCInBuiltFeatures.Controllers
 {
@@ -15,9 +17,9 @@ namespace MVCInBuiltFeatures.Controllers
 
         //
         // GET: /Roles/
-        public ActionResult Index()
+        public async Task<ActionResult> Index()
         {
-            var roles = context.Roles.ToList();
+            var roles = await context.Roles.ToListAsync();
             return View(roles);
         }
 
@@ -31,7 +33,7 @@ namespace MVCInBuiltFeatures.Controllers
         //
         // POST: /Roles/Create
         [HttpPost]
-        public ActionResult Create(FormCollection collection)
+        public async Task<ActionResult> Create(FormCollection collection)
         {
             try
             {
@@ -39,7 +41,7 @@ namespace MVCInBuiltFeatures.Controllers
                 {
                     Name = collection["RoleName"]
                 });
-                context.SaveChanges();
+                await context.SaveChangesAsync();
                 ViewBag.ResultMessage = "Role created successfully !";
                 return RedirectToAction("Index");
             }
@@ -51,9 +53,9 @@ namespace MVCInBuiltFeatures.Controllers
 
         //
         // GET: /Roles/Edit/5
-        public ActionResult Edit(string roleName)
+        public async Task<ActionResult> Edit(string roleName)
         {
-            var thisRole = context.Roles.Where(r => r.Name.Equals(roleName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+            var thisRole = await context.Roles.Where(r => r.Name.Equals(roleName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefaultAsync();
 
             return View(thisRole);
         }
@@ -62,12 +64,12 @@ namespace MVCInBuiltFeatures.Controllers
         // POST: /Roles/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult Edit(Microsoft.AspNet.Identity.EntityFramework.IdentityRole role)
+        public async Task<ActionResult> Edit(Microsoft.AspNet.Identity.EntityFramework.IdentityRole role)
         {
             try
             {
                 context.Entry(role).State = System.Data.Entity.EntityState.Modified;
-                context.SaveChanges();
+                await context.SaveChangesAsync();
 
                 return RedirectToAction("Index");
             }
@@ -79,52 +81,57 @@ namespace MVCInBuiltFeatures.Controllers
 
         //
         // GET: /Roles/Delete/5
-        public ActionResult Delete(string RoleName)
+        public async Task<ActionResult> Delete(string RoleName)
         {
             var thisRole = context.Roles.Where(r => r.Name.Equals(RoleName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
             context.Roles.Remove(thisRole);
-            context.SaveChanges();
+            await context.SaveChangesAsync();
             return RedirectToAction("Index");
         }
 
-        public ActionResult ManageUserRoles()
+
+        public async Task<ActionResult> ManageUserRoles()
         {
-            var list = context.Roles.OrderBy(r => r.Name).ToList().Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
-            ViewBag.Roles = list;            
+            var roleList = await context.Roles.OrderBy(r => r.Name).ToListAsync();
+            var selectRoleList = roleList.Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
+            ViewBag.Roles = selectRoleList;            
             return View();
         }
 
+
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult RoleAddToUser(string UserName, string RoleName)
+        public async Task<ActionResult> RoleAddToUser(string UserName, string RoleName)
         {
-            ApplicationUser user = context.Users.Where(u => u.UserName.Equals(UserName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+            ApplicationUser user = await context.Users.Where(u => u.UserName.Equals(UserName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefaultAsync();
             var account = new AccountController();
-            account.UserManager.AddToRole(user.Id, RoleName);
+            await account.UserManager.AddToRoleAsync(user.Id, RoleName);
             
             ViewBag.ResultMessage = "Role created successfully !";
-            
-            // prepopulat roles for the view dropdown
-            var list = context.Roles.OrderBy(r => r.Name).ToList().Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
-            ViewBag.Roles = list;   
+
+            // prepopulate roles for the view dropdown
+            var roleList = await context.Roles.OrderBy(r => r.Name).ToListAsync();
+            var selectRoleList = roleList.Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
+            ViewBag.Roles = selectRoleList;   
 
             return View("ManageUserRoles");
         }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult GetRoles(string UserName)
+        public async Task<ActionResult> GetRoles(string UserName)
         {            
             if (!string.IsNullOrWhiteSpace(UserName))
             {
-                ApplicationUser user = context.Users.Where(u => u.UserName.Equals(UserName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+                ApplicationUser user = await context.Users.Where(u => u.UserName.Equals(UserName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefaultAsync();
                 var account = new AccountController();
 
-                ViewBag.RolesForThisUser = account.UserManager.GetRoles(user.Id);
+                ViewBag.RolesForThisUser = await account.UserManager.GetRolesAsync(user.Id);
 
-                // prepopulat roles for the view dropdown
-                var list = context.Roles.OrderBy(r => r.Name).ToList().Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
-                ViewBag.Roles = list;            
+                // prepopulate roles for the view dropdown
+                var roleList = await context.Roles.OrderBy(r => r.Name).ToListAsync();
+                var selectRoleList = roleList.Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
+                ViewBag.Roles = selectRoleList;            
             }
 
             return View("ManageUserRoles");
@@ -132,14 +139,14 @@ namespace MVCInBuiltFeatures.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public ActionResult DeleteRoleForUser(string UserName, string RoleName)
+        public async Task<ActionResult> DeleteRoleForUser(string UserName, string RoleName)
         {
             var account = new AccountController();
-            ApplicationUser user = context.Users.Where(u => u.UserName.Equals(UserName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefault();
+            ApplicationUser user = await context.Users.Where(u => u.UserName.Equals(UserName, StringComparison.CurrentCultureIgnoreCase)).FirstOrDefaultAsync();
 
             if (account.UserManager.IsInRole(user.Id, RoleName))  
             {
-                account.UserManager.RemoveFromRole(user.Id, RoleName);
+                await account.UserManager.RemoveFromRoleAsync(user.Id, RoleName);
                 ViewBag.ResultMessage = "Role removed from this user successfully !";
             }
             else
@@ -147,8 +154,9 @@ namespace MVCInBuiltFeatures.Controllers
                 ViewBag.ResultMessage = "This user doesn't belong to selected role.";
             }
             // prepopulat roles for the view dropdown
-            var list = context.Roles.OrderBy(r => r.Name).ToList().Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
-            ViewBag.Roles = list;
+            var roleList = await context.Roles.OrderBy(r => r.Name).ToListAsync();
+            var selectRoleList = roleList.Select(rr => new SelectListItem { Value = rr.Name.ToString(), Text = rr.Name }).ToList();
+            ViewBag.Roles = selectRoleList;
 
             return View("ManageUserRoles");
         }
